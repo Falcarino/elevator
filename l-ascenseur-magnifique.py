@@ -17,7 +17,6 @@ import scenes
 scrColor = (255, 255, 255)
 size = width, height = 1152, 768
 screen = pg.display.set_mode((size))
-pg.display.set_caption("The Grand Elevator")
 ########################
 
 

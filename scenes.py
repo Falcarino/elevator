@@ -1,4 +1,3 @@
-#check "cars" project to see how to deal with sprites, seems easier than the "aliens" one
 import pygame as pg
 import text
 import os
@@ -9,7 +8,7 @@ main_dir = os.path.split(os.path.abspath(__file__))[0]
 def load_image(file):
     """ loads an image, prepares it for play
     """
-    file = os.path.join(main_dir, "sprites", file)
+    file = os.path.join(main_dir, "data", file)
     try:
         surface = pg.image.load(file)
     except pg.error:

@@ -2,12 +2,15 @@
 # Make a working MainMenu(SceneBase) class using Text and TextBox classes ☑ 
 # Instead of Test_app class, just make an indepedent main() function ☑ 
 
-# Complete the transition to the elevator scene condition (2<# of floors<10)
+# Complete the transition to the elevator scene condition (2< of floors <10) ☑
+
 # Make the floor user input box a counter (+1 up arrow key, -1 down arrow key),  
 # but leave keyboard input as well, whatevs
 
-# Write the Elevator scene
-# Integrate the Elevator scene
+# Write the Elevator scene ☑
+# Integrate the Elevator scene ☑
+# Create and integrate Person() class ☑
+# Make elevator interact with people, i.e. pick them up ☑
 
 import pygame as pg
 import text

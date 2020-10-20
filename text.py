@@ -6,14 +6,14 @@ class Text:
         self.text = text
         self.pos = (x, y)
 
-        self.fontname = None
-        self.fontsize = 36
+        self.fontname = 'helvetica'
+        self.fontsize = 24
         self.fontcolor = (0, 0, 0)
         self.set_font()
         self.render()
     
     def set_font(self):
-        self.font = pg.font.Font(self.fontname, self.fontsize)
+        self.font = pg.font.SysFont(self.fontname, self.fontsize)
 
     def render(self):
         self.surface = self.font.render(self.text, True, self.fontcolor)

@@ -1,4 +1,4 @@
-# Elevator
+# Elevator (outdated description, will re-write)
 The original task is taken from [here](https://www.codewars.com/kata/58905bfa1decb981da00009e)
 ## Short description
 The program simulates an elevator in a building with fixed queues of people who want to go on different floors. The elevator and queues follow a specific set of rules:  

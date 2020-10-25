@@ -21,9 +21,9 @@ def load_image(file):
 class SceneBase:
 
     def __init__(self, scr):
-        self.screen = scr
-        self.screen.fill((255, 255, 255))
         self.next = self
+        self.screen = scr
+
 
     def process_event(self, event):
         print('class SceneBase not overridden')
@@ -41,12 +41,11 @@ class MainMenu(SceneBase):
 
     def __init__(self, scr, txt="How many floors will it be?"):
         SceneBase.__init__(self, scr)
+
         self.txt = text.Text(txt, 20, 20)
-        self.txt.draw(self.screen)
+        self.userInput = text.TextBox('', 20, 50)
 
-        text.Text("Just write in something between 2 and 10 and press 'enter'", 20, 80).draw(self.screen)
-
-        self.userInput = text.TextBox('0', 20, 50)
+        self.render()
     
     def process_event(self, event):
         if event.type == pg.KEYDOWN:
@@ -54,20 +53,25 @@ class MainMenu(SceneBase):
                 usrStr = self.userInput.box.text
                 if usrStr.isdigit() and int(usrStr) > 2 and int(usrStr) < 10:
                     self.SwitchToScene(ElevatorScene(self.screen, int(usrStr)))
-            else:
-                self.userInput.handle_event(event)
-                self.update()
-                self.render()
+            else: self.userInput.handle_event(event)
+            
+        self.update()
+        self.render()
             
     def update(self):
         self.userInput.update()
 
     def render(self):
+        self.screen.fill((255, 255, 255))
+
+        self.txt.draw(self.screen)
+        text.Text("Just write in something between 2 and 10 and press 'enter'", 20, 80).draw(self.screen)
+
         self.userInput.draw(self.screen)
 
 ########################################
 
-MAX_PEOPLE_ON_FLOOR = 4
+MAX_PEOPLE_ON_FLOOR = 7
 BUILDING_X = 400
 GROUND_FLOOR_Y = 650
 
@@ -79,7 +83,7 @@ class Person(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.target = self
 
-    def remove_person(self):
+    def make_them_disappear(self):
         self.kill()
 
 class Floor(pg.sprite.Sprite):
@@ -121,6 +125,7 @@ class Elevator(pg.sprite.Sprite):
         self.rect.x = BUILDING_X - 64
         self.rect.y = GROUND_FLOOR_Y
 
+        self.capacity = 1
         self.speed = 64
         self.targets = []
 
@@ -132,8 +137,11 @@ class Elevator(pg.sprite.Sprite):
 
     def add_target(self, person):
         self.targets.append(person.target)
-        person.remove_person()
-
+        person.make_them_disappear()
+    
+    def remove_target(self, floor):
+        self.targets.remove(floor)
+        
     def display_targets(self, scr):
         ''' For now it'll be displaying only the last person who entered
         '''
@@ -156,6 +164,9 @@ class ElevatorScene(SceneBase):
         #spawning the elevator
         self.elevator = Elevator()
         self.all_sprites.add(self.elevator)
+
+        # setting a winning condition flag
+        self.building_is_cleared = False
 
     def construct_building(self, number_of_floors):
         current_floor_y = GROUND_FLOOR_Y
@@ -184,27 +195,41 @@ class ElevatorScene(SceneBase):
                 floor_text.draw(self.screen)
     
     def process_event(self, event):
+
         if event.type == pg.KEYDOWN:
             keys = pg.key.get_pressed()
 
-            # moving one floor up
-            if keys[pg.K_UP] and self.elevator.rect.y > self.building[-1].rect.y:
-                self.elevator.move_up()
-            
-            # moving one floor down
-            elif keys[pg.K_DOWN] and self.elevator.rect.y < self.building[0].rect.y:
-                self.elevator.move_down()
+            # restart when 'r' is pressed
+            if keys[pg.K_r]:
+                self.SwitchToScene(MainMenu(self.screen))
 
-            # letting in the first person in the queue, if there is any
-            elif keys[pg.K_SPACE]:
-                floor = (GROUND_FLOOR_Y - self.elevator.rect.y) // 64
-                if self.people[floor]:
-                    self.elevator.add_target(self.people[floor][0]) # removing the sprite
-                    del self.people[floor][0]
+            else:
+                # moving one floor up
+                if keys[pg.K_UP] and self.elevator.rect.y > self.building[-1].rect.y:
+                    self.elevator.move_up()
+                
+                # moving one floor down
+                elif keys[pg.K_DOWN] and self.elevator.rect.y < self.building[0].rect.y:
+                    self.elevator.move_down()
+
+                # letting in the first person in the queue, if there is any
+                elif keys[pg.K_SPACE]:
+                    floor = (GROUND_FLOOR_Y - self.elevator.rect.y) // 64
+                    
+                    # first see if there are people who want to get out
+                    if floor in self.elevator.targets:
+                        self.elevator.remove_target(floor)
+                        # if that was the last person in the building, throw a winning text
+                        if not any(self.people): self.building_is_cleared = True
+
+                    # check if someone can be picked up, unless the elevator is not full
+                    elif self.people[floor] and len(self.elevator.targets) < self.elevator.capacity:
+                        self.elevator.add_target(self.people[floor][0]) # removing the sprite
+                        del self.people[floor][0]
 
         self.update()
         self.render()
-            
+        
     def update(self):
         self.all_sprites.update()
 
@@ -215,6 +240,10 @@ class ElevatorScene(SceneBase):
         self.draw_captions()
         self.elevator.display_targets(self.screen)
 
-        text.Text("use up and down arrow keys to move, space to pick up people and have fun :D", 200, 40).draw(self.screen)
-        text.Text("oh, and you can press 'escape' to cease the experience", 300, 80).draw(self.screen)
+        text.Text("use up and down arrow keys to move, space to load and unload people and have fun :D", 160, 30).draw(self.screen)
+        text.Text("press 'r' to restart and spawn a new building", 350, 60).draw(self.screen)
+        text.Text("oh, and you can press 'escape' to cease the experience", 300, 90).draw(self.screen)
+        if self.building_is_cleared:
+            text.Text("You've done it! Everyone got to the floors they wanted!", 300, 730).draw(self.screen)
+
         self.all_sprites.draw(self.screen)

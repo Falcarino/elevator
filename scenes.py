@@ -39,35 +39,60 @@ class SceneBase:
 
 class MainMenu(SceneBase):
 
-    def __init__(self, scr, txt="How many floors will it be?"):
+    def __init__(self, scr):
         SceneBase.__init__(self, scr)
+        self.inputBoxes = []
 
-        self.txt = text.Text(txt, 20, 20)
-        self.userInput = text.TextBox('', 20, 50)
+        txt = "How many floors will it be?"
+        self.floor_box_txt = text.Text(txt, 20, 20)
+        self.floorInput = text.TextBox('', 20, 50)
+        self.floorInput.active = True
+        self.inputBoxes.append(self.floorInput)
+        
+        txt = "Alternatively, enter a seed here:"
+        self.seed_box_txt = text.Text(txt, 800, 670)
+        self.seedInput = text.TextBox('', 800, 700)
+        self.inputBoxes.append(self.seedInput)
 
         self.render()
+
+    def generate_seed(self, floors):
+        seed = ''
+        for i in range(9): seed += str(random.randint(0, 9))
+        seed += str(floors)
+        print(seed)
+        return seed
     
     def process_event(self, event):
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_RETURN:
-                usrStr = self.userInput.box.text
-                if usrStr.isdigit() and int(usrStr) > 2 and int(usrStr) < 10:
-                    self.SwitchToScene(ElevatorScene(self.screen, int(usrStr)))
-            else: self.userInput.handle_event(event)
+        if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+
+                if self.floorInput.active:
+                    usrStr = self.floorInput.box.text
+                    if usrStr.isdigit() and int(usrStr) > 2 and int(usrStr) < 10:
+                        seed = self.generate_seed(int(usrStr))
+                        self.SwitchToScene(ElevatorScene(self.screen, seed))
+                if self.seedInput.active:
+                    seed = self.seedInput.box.text
+                    self.SwitchToScene(ElevatorScene(self.screen, seed))
+
+        else:
+            for box in self.inputBoxes: box.handle_event(event)
             
         self.update()
         self.render()
             
     def update(self):
-        self.userInput.update()
+        self.floorInput.update()
 
     def render(self):
         self.screen.fill((255, 255, 255))
 
-        self.txt.draw(self.screen)
+        self.seed_box_txt.draw(self.screen)
+        self.floor_box_txt.draw(self.screen)
         text.Text("Just write in something between 2 and 10 and press 'enter'", 20, 80).draw(self.screen)
 
-        self.userInput.draw(self.screen)
+        self.floorInput.draw(self.screen)
+        self.seedInput.draw(self.screen)
 
 ########################################
 
@@ -94,9 +119,8 @@ class Floor(pg.sprite.Sprite):
         self.image = load_image("floor.png")
         self.rect = self.image.get_rect()
 
-    def spawn_people(self, current_floor, number_of_floors, scr):
+    def spawn_people(self, current_floor, number_of_floors, people_count):
         people_on_the_floor = []
-        people_count = random.randint(0, MAX_PEOPLE_ON_FLOOR)
         last_person_in_queue_x = BUILDING_X
 
         # spawning individual people
@@ -151,14 +175,16 @@ class Elevator(pg.sprite.Sprite):
 
 class ElevatorScene(SceneBase):
 
-    def __init__(self, scr, floors_amount):
+    def __init__(self, scr, seed):
         SceneBase.__init__(self, scr)
+        self.seed = seed
 
         self.all_sprites = pg.sprite.Group()
 
         #spawning the building and people instide it
         self.building = []
         self.people = []
+        floors_amount = int(self.seed[-1])
         self.construct_building(floors_amount)
 
         #spawning the elevator
@@ -180,7 +206,9 @@ class ElevatorScene(SceneBase):
             current_floor_y -= 64
 
             # creating a list of people on the floor
-            people_on_the_floor = self.building[floor].spawn_people(floor, number_of_floors, self.screen)
+            self.seed = self.seed[:-1]
+            people_count = int(self.seed[-1]) % (MAX_PEOPLE_ON_FLOOR + 1)
+            people_on_the_floor = self.building[floor].spawn_people(floor, number_of_floors, people_count)
             self.people.append(people_on_the_floor)
         
         # adding all created sprites to the list

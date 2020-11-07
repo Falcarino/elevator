@@ -24,6 +24,9 @@ class Text:
 
     def get_surface_width(self): return self.surface.get_width()
 
+COLOR_ACTIVE = (0, 0, 0)
+COLOR_INACTIVE = (150, 150, 150)
+
 class TextBox:
 
     def __init__(self, text, x, y):
@@ -33,8 +36,20 @@ class TextBox:
         self.rect = pg.Rect(self.x, self.y, w, h)
         self.box = Text(text, self.x, self.y)
 
+        self.color = COLOR_INACTIVE
+        self.active = False
+
     def handle_event(self, event):
-        if event.type == pg.KEYDOWN:
+        if event.type == pg.MOUSEBUTTONDOWN:
+            # If the user clicked on the input box
+            if self.rect.collidepoint(event.pos):
+                self.active = True
+            else:
+                self.active = False
+        # Change the input box color to indicate whether it's active or not
+        self.color = COLOR_ACTIVE if self.active else COLOR_INACTIVE
+
+        if event.type == pg.KEYDOWN and self.active:
             if event.key == pg.K_BACKSPACE:
                 self.box.text = self.box.text[:-1]
             else:
@@ -48,5 +63,5 @@ class TextBox:
 
     def draw(self, screen):
         #remove old text and blit a new one
-        pg.draw.rect(screen, (255, 255, 255), self.rect)
-        screen.blit(self.box.surface, (self.x, self.y))
+        pg.draw.rect(screen, self.color, self.rect, 2)
+        screen.blit(self.box.surface, (self.x + 5, self.y))
